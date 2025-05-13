@@ -17,10 +17,10 @@ class AuthController {
   // Registrar novo usuário
   async register(req, res) {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, nickname } = req.body;
 
         //validação basica
-        if (!name || !email || !password) {
+        if (!name || !email || !password || !nickname) {
             return res.status(400).json({ error: "Todos os campos são obrigatórios" });
         }
 
@@ -30,12 +30,18 @@ class AuthController {
             return res.status(400).json({ error: "E-mail já cadastrado" });
         }
 
+        const userNicknameExists = await UserModel.findByNickname(nickname);
+        if (userNicknameExists) {
+            return res.status(400).json({ error: "Esse nickname já está em uso" });
+        }
+
         //Hash 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         //criar objeto do usuario
         const data = {
             name,
+            nickname,
             email,
             password: hashedPassword
         };
@@ -76,7 +82,7 @@ class AuthController {
 
         return res.status(200).json({ message: "Login realizado com sucesso!", token, UserExists });
     } catch (error) {
-        console.erroer("Erro ao realizar login:", error);
+        console.error("Erro ao realizar login:", error);
         return res.status(500).json({error: "Erro ao realizar login!"});
     }
   }
